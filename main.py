@@ -1,39 +1,46 @@
 import os
-import time
-import requests
 from modules.cookie_checker import get_username_from_cookie
-from modules.e2ee_chat import start_e2ee_chat
 from modules.normal_chat import start_normal_chat
+from modules.e2ee_chat import start_e2ee_chat
 
-def clear():
-    os.system("clear")
-
-def banner():
-    print("""
-╔═════════════════════════════════════╗
-║      ⚡ Facebook Messenger Tool ⚡    ║
-╠═════════════════════════════════════╣
-║  [1] Normal Chat Conversation       ║
-║  [2] End-to-End Encrypted (E2EE)    ║
-╚═════════════════════════════════════╝
-""")
-
-def get_cookie():
-    if not os.path.exists("cookie.txt"):
-        open("cookie.txt", "w").close()
-        print("❗ Please paste your Facebook cookie in cookie.txt")
-        exit()
-    with open("cookie.txt", "r") as f:
-        return f.read().strip()
+def load_cookie():
+    try:
+        with open('cookies.txt', 'r') as f:
+            return f.read().strip()
+    except FileNotFoundError:
+        print("❌ 'cookies.txt' file not found.")
+        return None
 
 def main():
-    clear()
-    print("🔍 Validating cookie...")
-    cookie = get_cookie()
+    os.system("clear")
+    print("⚡ Facebook Chat Auto Sender ⚡\n")
+
+    cookie = load_cookie()
+    if not cookie:
+        return
+
     username = get_username_from_cookie(cookie)
     if not username:
-        print("❌ Invalid or expired cookie. Please update cookie.txt")
+        print("❌ Invalid Cookie!")
         return
+
+    print(f"✔ Cookie Valid! Logged in as: {username}\n")
+
+    print("[1] Normal Chat Conversation")
+    print("[2] End-to-End Encrypted (E2EE) Conversation")
+
+    choice = input("Choose Option [1/2]: ").strip()
+
+    if choice == "1":
+        start_normal_chat(cookie)
+    elif choice == "2":
+        print("Starting E2EE Chat Mode...                              Coming Soon!")
+        start_e2ee_chat(cookie)
+    else:
+        print("❌ Invalid Choice!")
+
+if __name__ == "__main__":
+    main()
     print(f"✔ Cookie Valid! Logged in as: {username}\n")
     time.sleep(1)
 

@@ -1,39 +1,115 @@
-import os
 import requests
-from rich.console import Console
-from rich.panel import Panel
-from modules import normal_chat, e2ee_chat
-from modules.cookie_utils import load_cookies
+import time
+import sys
+import os
+import json
 
-console = Console()
-
-def show_logo():
-    with open("assets/saiim_logo.txt", "r", encoding="utf-8") as f:
-        logo = f.read()
-    console.print(Panel.fit(logo, title="[bold green]SAIIM MESSENGER", border_style="bold blue"))
-
-def show_menu():
-    console.print("\n[bold cyan][1][/bold cyan] Normal Chat Conversation")
-    console.print("[bold cyan][2][/bold cyan] End-to-End Encrypted (E2EE) Conversation")
-    choice = console.input("\n[bold yellow]Choose Option [1/2]: [/bold yellow]")
-    return choice.strip()
-
-def check_cookie():
+# --------- COOKIE LOADER FUNCTION ---------
+def load_cookie():
     try:
-        cookies = load_cookies()
-        response = requests.get("https://www.facebook.com/me", cookies=cookies)
-        if "name" in response.text.lower() or "/me/picture" in response.text.lower():
-            # Extract username from the title
-            name = response.text.split("<title>")[1].split("</title>")[0]
-            console.print(f"[bold green]✅ Cookie Valid! Logged in as:[/bold green] [yellow]{name}[/yellow]")
+        with open("cookie.txt", "r") as f:
+            raw = f.read().strip()
+            cookies = {}
+            for item in raw.split(";"):
+                if "=" in item:
+                    key, value = item.strip().split("=", 1)
+                    cookies[key] = value
+            return cookies
+    except FileNotFoundError:
+        print("🚫 cookie.txt file not found.")
+        sys.exit(1)
+
+# --------- COOKIE CHECKER FUNCTION ---------
+def check_cookie(cookies):
+    try:
+        response = requests.get(
+            "https://www.facebook.com/me?__a=1",
+            cookies=cookies,
+            headers={
+                "User-Agent": "Mozilla/5.0"
+            }
+        )
+        if response.status_code == 200:
+            data = json.loads(response.text.replace("for (;;);", ""))
+            name = data.get("name") or data.get("user", {}).get("name") or "Unknown"
+            uid = data.get("id") or data.get("user", {}).get("id") or "N/A"
+            print(f"\n✅ Cookie valid: Logged in as {name} (UID: {uid})\n")
             return True
         else:
-            console.print("[red]❌ Cookie invalid or expired! Please update your cookies.txt[/red]")
+            print("❌ Cookie check failed. HTTP", response.status_code)
             return False
     except Exception as e:
-        console.print(f"[red]Error checking cookie:[/red] {e}")
+        print("❌ Cookie check error:", str(e))
         return False
 
+# --------- MESSAGE SENDER FUNCTION ---------
+def send_message(thread_id, message, cookies, is_e2ee=False):
+    url = "https://www.facebook.com/api/graphql/" if is_e2ee else "https://www.facebook.com/messages/send/"
+    payload = {
+        "id": thread_id,
+        "message": message,
+        "timestamp": str(int(time.time() * 1000))
+    }
+    headers = {
+        "User-Agent": "Mozilla/5.0",
+        "Content-Type": "application/json"
+    }
+
+    try:
+        response = requests.post(url, headers=headers, cookies=cookies, json=payload)
+        if response.status_code == 200:
+            print(f"✅ Message sent successfully at {time.strftime('%H:%M:%S')}")
+        else:
+            print("❌ Failed to send message. HTTP", response.status_code)
+    except Exception as e:
+        print("❌ Error sending message:", str(e))
+
+# --------- MAIN FUNCTION ---------
+def main():
+    os.system("clear")
+    print("🔐 Facebook Auto Messenger Tool - By SAIIM 🔐\n")
+
+    cookies = load_cookie()
+    if not check_cookie(cookies):
+        print("🚫 Invalid Facebook cookie. Please fix your cookie.txt file.")
+        sys.exit(1)
+
+    print("[1] Normal Chat Conversation")
+    print("[2] End-to-End Encrypted (E2EE) Conversation")
+    choice = input("                                                        Choose Option [1/2]: ").strip()
+
+    if choice not in ["1", "2"]:
+        print("❌ Invalid option.")
+        return
+
+    is_e2ee = choice == "2"
+    thread_id = input("\nEnter {} Chat Thread ID: ".format("E2EE" if is_e2ee else "Normal")).strip()
+
+    if not thread_id.isdigit():
+        print("❌ Invalid thread ID.")
+        return
+
+    print("💬 Messaging started... Press Ctrl+C to stop.\n")
+
+    try:
+        with open("messages.txt", "r", encoding="utf-8") as f:
+            messages = [line.strip() for line in f if line.strip()]
+    except FileNotFoundError:
+        print("❌ messages.txt not found.")
+        return
+
+    index = 0
+    while True:
+        message = messages[index]
+        send_message(thread_id, message, cookies, is_e2ee=is_e2ee)
+        index = (index + 1) % len(messages)
+        time.sleep(60)  # 60 second delay
+except KeyboardInterrupt:
+        print("\n🛑 Messaging stopped by user.")
+
+# --------- ENTRY POINT ---------
+if __name__ == "__main__":
+    main()
 def main():
     os.system("clear" if os.name == "posix" else "cls")
     show_logo()

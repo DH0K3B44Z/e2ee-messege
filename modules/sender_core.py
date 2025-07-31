@@ -1,47 +1,38 @@
 # modules/sender_core.py
 
 import requests
+import random
 import time
-from modules.logger import log_info
+from modules.logger import log_message
+from modules.cookie_utils import load_cookies
 
-def send_messages(cookies, message_file, e2ee=False):
-    try:
-        with open(message_file, "r", encoding="utf-8") as f:
-            messages = [line.strip() for line in f if line.strip()]
-    except FileNotFoundError:
-        log_info(f"{message_file} not found!", "error")
-        return
-
-    chat_id = input("Enter Chat Thread ID: ").strip()
-    delay = int(input("Delay between messages (in seconds): ").strip())
-
-    index = 0
-    while True:
-        for cookie in cookies:
-            message = messages[index % len(messages)]
-            prefix = "[E2EE]" if e2ee else "[CHAT]"
-            full_message = f"{prefix} {message}"
-            success = simulate_send(chat_id, full_message, cookie, e2ee)
-            if success:
-                log_info(f"Sent: {full_message}", "success")
-            else:
-                log_info("Failed to send", "warn")
-            time.sleep(delay)
-            index += 1
-
-def simulate_send(chat_id, message, cookie, e2ee):
-    # Fake simulation (you’ll replace this with your real request)
+def send_message(thread_id, message, typing=False):
+    url = f"https://www.facebook.com/messages/send/?thread_id={thread_id}"
     headers = {
-        "cookie": cookie,
-        "user-agent": "Mozilla/5.0"
+        "User-Agent": "Mozilla/5.0",
+        "Content-Type": "application/x-www-form-urlencoded",
     }
+    cookies = load_cookies()
+    
     payload = {
-        "chat_id": chat_id,
-        "text": message
+        "message": message,
+        "client": "mercury"
     }
+
+    if typing:
+        delay = random.uniform(2, 5)
+        for ch in message:
+            time.sleep(delay / len(message))  # simulate typing
+    else:
+        time.sleep(random.uniform(1, 3))
+
     try:
-        # Placeholder request, replace with real Facebook chat URL and params
-        response = requests.post("https://www.facebook.com/api/chat", headers=headers, data=payload)
-        return response.status_code == 200
-    except:
+        response = requests.post(url, data=payload, headers=headers, cookies=cookies)
+        if response.status_code == 200:
+            sender_name = cookies.get("c_user", "unknown_user")
+            log_message(sender_name, message)
+            return True
+        else:
+            return False
+    except Exception:
         return False

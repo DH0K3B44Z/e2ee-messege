@@ -1,42 +1,70 @@
 import time
-import random
-import requests
-from modules.utils import simulate_typing, log_message
+import os
+import json
+from modules.cookie_checker import get_username_from_cookie
+from modules.messenger import start_messaging
 
-def start_e2ee_chat(cookie, thread_id):
+
+def clear():
+    os.system('cls' if os.name == 'nt' else 'clear')
+
+
+def banner():
+    print("""
+\x1b[1;32m███████╗███████╗███████╗███████╗███████╗███████╗
+╚══███╔╝██╔════╝██╔════╝██╔════╝██╔════╝██╔════╝
+  ███╔╝ █████╗  █████╗  █████╗  █████╗  █████╗  
+ ███╔╝  ██╔══╝  ██╔══╝  ██╔══╝  ██╔══╝  ██╔══╝  
+███████╗███████╗███████╗███████╗███████╗███████╗
+╚══════╝╚══════╝╚══════╝╚══════╝╚══════╝╚══════╝
+\x1b[1;34m            Facebook E2EE Messenger\x1b[1;34m            Facebook E2EE Messenger\x1b[0m
+        \x1b[1;30m[    \x1b[1;30m[\x1b[1;35m@    \x1b[1;30m[\x1b[1;35m@\x1b[1;30m] Dev: Saiim | ChatGPT Enhanced Tool    \x1b[1;30m[\x1b[1;35m@\x1b[1;30m] Dev: Saiim | ChatGPT Enhanced Tool\x1b[0m
+""")
+
+
+def load_cookie():
+    if not os.path.exists("cookie.txt"):
+        print("\n\x1b[1;31m[!] cookie.txt file not found\x1b[0m")
+        exit()
+    with open("cookie.txt", "r") as f:
+        return f.read().strip()
+
+
+def load_messages():
+    if not os.path.exists("messages.txt"):
+        print("\n\x1b[1;31m[!] messages.txt file not found\x1b[0m")
+        exit()
+    with open("messages.txt", "r") as f:
+        messages = [msg.strip() for msg in f if msg.strip()]
+    if not messages:
+        print("\n\x1b[1;31m[!] No messages found in messages.txt\x1b[0m")
+        exit()
+    return messages
+
+
+def main():
+    clear()
+    banner()
+
+    cookie = load_cookie()
+    username = get_username_from_cookie(cookie)
+    print(f"\n\x1b[1;32m[✓] Logged in as: \x1b[1;36m{username}\x1b[0m")
+
+    thread_id = input("\n\x1b[1;33m[?] Enter E2EE Thread ID: \x1b[0m").strip()
     if not thread_id:
-        print("❗ Thread ID required.")
+        print("\x1b[1;31m[!] Thread ID cannot be empty\x1b[0m")
         return
 
     try:
-        with open("messages.txt", "r", encoding="utf-8") as f:
-            messages = [line.strip() for line in f if line.strip()]
-    except FileNotFoundError:
-        print("❌ messages.txt not found.")
+        delay = int(input("\x1b[1;33m[?] Delay between messages (seconds): \x1b[0m"))
+    except ValueError:
+        print("\x1b[1;31m[!] Invalid delay input\x1b[0m")
         return
 
-    headers = {
-        "cookie": cookie,
-        "user-agent": "Mozilla/5.0 (Linux; Android 10)",
-        "content-type": "application/x-www-form-urlencoded"
-    }
+    messages = load_messages()
 
-    count = 0
-    while True:
-        for msg in messages:
-            simulate_typing(msg)
-            data = {
-                "message": msg,
-                "thread_id": thread_id,
-                "__a": 1
-            }
-            try:
-                r = requests.post("https://www.facebook.com/messages/send/", headers=headers, data=data)
-                if r.status_code == 200:
-                    count += 1
-                    log_message(thread_id, msg, count)
-                else:
-                    print(f"⚠️ Failed ({r.status_code}): {msg}")
-            except Exception as e:
-                print(f"❌ Error: {e}")
-            time.sleep(random.randint(10, 15))  # Delay between messages
+    start_messaging(cookie=cookie, thread_id=thread_id, messages=messages, delay=delay)
+
+
+if __name__ == "__main__":
+    main()

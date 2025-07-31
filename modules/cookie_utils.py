@@ -1,33 +1,25 @@
-# modules/cookie_utils.py
-
 import requests
-import json
+from bs4 import BeautifulSoup
 
-def check_cookie_and_get_name(cookie_file):
-    with open(cookie_file, 'r') as f:
-        raw = f.read().strip()
-
-    cookies = {}
-    for item in raw.split(';'):
-        if '=' in item:
-            key, value = item.strip().split('=', 1)
-            cookies[key] = value
-
-    headers = {
-        "User-Agent": "Mozilla/5.0"
-    }
-
-    res = requests.get("https://www.facebook.com/api/graphql/", params={
-        "doc_id": "5300842796671573",  # known valid doc_id for profile info
-        "variables": json.dumps({"scale": 3})
-    }, cookies=cookies, headers=headers)
-
-    if "Unauthorized" in res.text or res.status_code != 200:
-        raise Exception("Invalid or expired cookie")
-
+def get_username(cookie):
     try:
-        data = res.json()
-        name = data['data']['viewer']['actor']['name']
-        return name
-    except:
-        raise Exception("Unable to fetch name from cookie")
+        headers = {
+            "User-Agent": "Mozilla/5.0",
+            "Cookie": cookie
+        }
+        response = requests.get("https://www.facebook.com/me", headers=headers, timeout=10)
+
+        if "c_user" not in cookie:
+            return None
+
+        if "login" in response.url or "checkpoint" in response.url:
+            return None
+
+        soup = BeautifulSoup(response.text, 'html.parser')
+        title = soup.title.string if soup.title else ""
+        if "Facebook" in title:
+            name = title.replace(" | Facebook", "").strip()
+            return name if name else "Facebook User"
+        return None
+    except Exception:
+        return None

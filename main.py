@@ -1,10 +1,7 @@
-# main.py
-
 import os
 from rich.console import Console
 from rich.panel import Panel
-from modules import normal_chat, e2ee_chat
-from modules.cookie_utils import check_cookie_and_get_name
+from modules import normal_chat, e2ee_chat, cookie_utils
 
 console = Console()
 
@@ -14,7 +11,30 @@ def show_logo():
             logo = f.read()
         console.print(Panel.fit(logo, title="[bold green]SAIIM MESSENGER", border_style="bold blue"))
     except FileNotFoundError:
-        console.print("[red]Logo file missing! Add assets/saiim_logo.txt[/red]")
+        console.print("[red]Logo file not found! Skipping logo...[/red]")
+
+def check_cookie_and_show_user():
+    if not os.path.exists("cookies.txt"):
+        console.print("[red]cookies.txt file not found![/red]")
+        return False
+
+    try:
+        with open("cookies.txt", "r", encoding="utf-8") as f:
+            cookie = f.read().strip()
+            if not cookie:
+                console.print("[red]Cookie file is empty![/red]")
+                return False
+
+        username = cookie_utils.get_username(cookie)
+        if username:
+            console.print(f"[green]✔ Cookie Valid! Logged in as:[/green] [bold cyan]{username}[/bold cyan]")
+            return True
+        else:
+            console.print("[red]❌ Invalid or expired cookie.[/red]")
+            return False
+    except Exception as e:
+        console.print(f"[red]Error reading cookie: {e}[/red]")
+        return False
 
 def show_menu():
     console.print("\n[bold cyan][1][/bold cyan] Normal Chat Conversation")
@@ -26,14 +46,23 @@ def main():
     os.system("clear" if os.name == "posix" else "cls")
     show_logo()
 
-    # 🍪 Cookie check before proceeding
-    console.print("\n[bold green]Checking your Facebook cookie...[/bold green]")
-    try:
-        name = check_cookie_and_get_name("cookies.txt")
-        console.print(f"[bold green]✅ Logged in as:[/bold green] [bold yellow]{name}[/bold yellow]")
-    except Exception as e:
-        console.print(f"[red]❌ Cookie Invalid or Expired![/red] {str(e)}")
+    if not check_cookie_and_show_user():
         return
+
+    choice = show_menu()
+
+    if choice == '1':
+        normal_chat.start()
+    elif choice == '2':
+        e2ee_chat.start()
+    else:
+        console.print("[red]Invalid option! Exiting.[/red]")
+
+if __name__ == "__main__":
+    try:
+        main()
+    except KeyboardInterrupt:
+        console.print("\n[red]Exiting by user...[/red]")
 
     choice = show_menu()
 

@@ -1,35 +1,35 @@
-import requests
-import re
+import json
+from http.cookies import SimpleCookie
+from requests import Session
+from rich import print
 
-def get_username_from_cookie(cookie):
-    headers = {
-        "User-Agent": "Mozilla/5.0",
-        "Cookie": cookie
-    }
+def parse_cookie_file(path):
     try:
-        res = requests.get("https://www.facebook.com/me", headers=headers)
-        if "home_icon" in res.text:
-            match = re.search(r'"name":"(.*?)"', res.text)
-            if match:
-                return match.group(1)
-            else:
-                return "Facebook"
-        else:
-            return None
-    except:
+        with open(path, "r", encoding="utf-8") as f:
+            raw = f.read()
+        cookie = SimpleCookie()
+        cookie.load(raw)
+        return {key: morsel.value for key, morsel in cookie.items()}
+    except Exception:
         return None
-    except:
-        uid = cookies.get("c_user", "Unknown")
 
-    profile_url = f"https://www.facebook.com/{uid}"
+def check_and_print_username(cookie_path):
+    cookies = parse_cookie_file(cookie_path)
+    if not cookies:
+        print("[red]❌ Cookie file invalid or missing![/red]")
+        return False
 
-    print(f"[✓] Cookie is valid.")
-    print(f"    • Name: {name}")
-    print(f"    • UID : {uid}")
-    print(f"    • Profile: {profile_url}")
-
-    return {
-        "name": name,
-        "uid": uid,
-        "profile": profile_url
-    }
+    try:
+        session = Session()
+        session.cookies.update(cookies)
+        r = session.get("https://m.facebook.com/me", allow_redirects=True)
+        if "logout" in r.text and "name" in r.text:
+            name = r.text.split('<title>')[1].split('</title>')[0]
+            print(f"[green]✔ Cookie Valid! Logged in as:[/green] [bold]{name}[/bold]")
+            return True
+        else:
+            print("[red]❌ Invalid or expired cookie![/red]")
+            return False
+    except Exception as e:
+        print(f"[red]❌ Error checking cookie: {e}[/red]")
+        return False

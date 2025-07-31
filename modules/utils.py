@@ -1,15 +1,19 @@
-import sys
 import time
-from datetime import datetime
+import random
 
-def simulate_typing(message):
-    print("✏️ Typing: ", end="")
-    for char in message:
-        sys.stdout.write(char)
-        sys.stdout.flush()
-        time.sleep(0.05)
+def load_messages(file_path):
+    with open(file_path, "r", encoding="utf-8") as f:
+        return [line.strip() for line in f if line.strip()]
+
+def load_thread(file_path):
+    with open(file_path, "r") as f:
+        return f.read().strip()
+
+def simulate_typing(text):
+    for char in text:
+        print(char, end="", flush=True)
+        time.sleep(random.uniform(0.05, 0.15))
     print()
 
-def log_message(thread_id, message, count):
-    now = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
-    print(f"✅ Sent [{count}] to {thread_id} at {now} ➤ {message}")
+def delay():
+    time.sleep(random.randint(50, 60))  # Change delay range here

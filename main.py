@@ -19,7 +19,7 @@ def show_menu():
     return choice.strip()
 
 def main():
-    os.system("clear")
+    os.system("clear" if os.name == "posix" else "cls")
     show_logo()
     choice = show_menu()
 
@@ -28,7 +28,7 @@ def main():
     elif choice == '2':
         e2ee_chat.start()
     else:
-        console.print("[red]wrong number! Exiting.[/red]")
+        console.print("[red]Invalid option! Exiting.[/red]")
 
 if __name__ == "__main__":
     main()

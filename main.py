@@ -63,6 +63,35 @@ if __name__ == "__main__":
         main()
     except KeyboardInterrupt:
         console.print("\n[red]Exiting by user...[/red]")
+        return False
+
+def show_menu():
+    console.print("\n[bold cyan][1][/bold cyan] Normal Chat Conversation")
+    console.print("[bold cyan][2][/bold cyan] End-to-End Encrypted (E2EE) Conversation")
+    choice = console.input("\n[bold yellow]Choose Option [1/2]: [/bold yellow]")
+    return choice.strip()
+
+def main():
+    os.system("clear" if os.name == "posix" else "cls")
+    show_logo()
+
+    if not check_cookie_and_show_user():
+        return
+
+    choice = show_menu()
+
+    if choice == '1':
+        normal_chat.start()
+    elif choice == '2':
+        e2ee_chat.start()
+    else:
+        console.print("[red]Invalid option! Exiting.[/red]")
+
+if __name__ == "__main__":
+    try:
+        main()
+    except KeyboardInterrupt:
+        console.print("\n[red]Exiting by user...[/red]")
 
     choice = show_menu()
 

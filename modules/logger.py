@@ -1,17 +1,8 @@
 # modules/logger.py
 
-from rich.console import Console
 from datetime import datetime
 
-console = Console()
-
-def log_info(msg, type="info"):
-    color = {
-        "info": "cyan",
-        "success": "green",
-        "error": "red",
-        "warn": "yellow"
-    }.get(type, "white")
-    
-    time_str = datetime.now().strftime("%H:%M:%S")
-    console.print(f"[{color}][{time_str}][/][bold {color}] {msg}[/bold {color}]")
+def log_message(sender, message):
+    with open("message_log.txt", "a", encoding="utf-8") as f:
+        now = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+        f.write(f"[{now}] {sender}: {message}\n")

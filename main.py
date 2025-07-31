@@ -1,39 +1,54 @@
-import requests
-import time
-import sys
+# main.py
+
 import os
-import json
+from rich.console import Console
+from rich.panel import Panel
+from modules import normal_chat, e2ee_chat
+from modules.cookie_utils import check_cookie_and_get_name
 
-# --------- COOKIE LOADER FUNCTION ---------
-def load_cookie():
+console = Console()
+
+def show_logo():
     try:
-        with open("cookie.txt", "r") as f:
-            raw = f.read().strip()
-            cookies = {}
-            for item in raw.split(";"):
-                if "=" in item:
-                    key, value = item.strip().split("=", 1)
-                    cookies[key] = value
-            return cookies
+        with open("assets/saiim_logo.txt", "r", encoding="utf-8") as f:
+            logo = f.read()
+        console.print(Panel.fit(logo, title="[bold green]SAIIM MESSENGER", border_style="bold blue"))
     except FileNotFoundError:
-        print("🚫 cookie.txt file not found.")
-        sys.exit(1)
+        console.print("[red]Logo file missing! Add assets/saiim_logo.txt[/red]")
 
-# --------- COOKIE CHECKER FUNCTION ---------
-def check_cookie(cookies):
+def show_menu():
+    console.print("\n[bold cyan][1][/bold cyan] Normal Chat Conversation")
+    console.print("[bold cyan][2][/bold cyan] End-to-End Encrypted (E2EE) Conversation")
+    choice = console.input("\n[bold yellow]Choose Option [1/2]: [/bold yellow]")
+    return choice.strip()
+
+def main():
+    os.system("clear" if os.name == "posix" else "cls")
+    show_logo()
+
+    # 🍪 Cookie check before proceeding
+    console.print("\n[bold green]Checking your Facebook cookie...[/bold green]")
     try:
-        response = requests.get(
-            "https://www.facebook.com/me?__a=1",
-            cookies=cookies,
-            headers={
-                "User-Agent": "Mozilla/5.0"
-            }
-        )
-        if response.status_code == 200:
-            data = json.loads(response.text.replace("for (;;);", ""))
-            name = data.get("name") or data.get("user", {}).get("name") or "Unknown"
-            uid = data.get("id") or data.get("user", {}).get("id") or "N/A"
-            print(f"\n✅ Cookie valid: Logged in as {name} (UID: {uid})\n")
+        name = check_cookie_and_get_name("cookies.txt")
+        console.print(f"[bold green]✅ Logged in as:[/bold green] [bold yellow]{name}[/bold yellow]")
+    except Exception as e:
+        console.print(f"[red]❌ Cookie Invalid or Expired![/red] {str(e)}")
+        return
+
+    choice = show_menu()
+
+    try:
+        if choice == '1':
+            normal_chat.start()
+        elif choice == '2':
+            e2ee_chat.start()
+        else:
+            console.print("[red]Invalid option! Exiting.[/red]")
+    except KeyboardInterrupt:
+        console.print("\n[bold red]Interrupted by user. Exiting...[/bold red]")
+
+if __name__ == "__main__":
+    main()
             return True
         else:
             print("❌ Cookie check failed. HTTP", response.status_code)

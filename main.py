@@ -32,3 +32,7 @@ def main():
 
 if __name__ == "__main__":
     main()
+def print_logo():
+    with open("assets/saiim_logo.txt", "r") as f:
+        from rich import print
+        print(f"[bold green]{f.read()}[/bold green]")

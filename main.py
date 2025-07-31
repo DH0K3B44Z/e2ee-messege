@@ -4,6 +4,23 @@ import os
 from rich.console import Console
 from rich.panel import Panel
 from modules import normal_chat, e2ee_chat
+from modules.cookie_checker import check_cookie
+from modules.sender_core import send_messages
+
+def main():
+    print("🔐 Checking Facebook cookie...\n")
+    user = check_cookie()
+
+    if not user:
+        print("\n[!] Exiting due to invalid cookie.")
+        return
+
+    print(f"\n✅ Starting as: {user['name']} ({user['uid']})\n")
+    send_messages()
+
+if __name__ == "__main__":
+    main()
+
 
 console = Console()
 

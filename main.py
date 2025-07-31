@@ -1,39 +1,28 @@
+from modules.cookie_checker import get_username_from_cookie
+from modules.normal_chat import send_normal_messages
+from modules.e2ee_chat import send_e2ee_messages
 import os
-from rich.console import Console
-from rich.panel import Panel
-from modules.cookie_checker import check_and_print_username
-from modules.messenger import start_normal_chat, start_e2ee_chat
 
-console = Console()
+def clear():
+    os.system("clear")
 
-def show_logo():
-    path = "assets/saiim_logo.txt"
-    if os.path.exists(path):
-        with open(path, "r", encoding="utf-8") as f:
-            logo = f.read()
-        console.print(Panel.fit(logo, title="[bold green]SAIIM MESSENGER", border_style="bold blue"))
+def menu():
+    clear()
+    print("✔ Cookie Valid! Logged in as: Facebook\n")
+    print("[1] Normal Chat Conversation")
+    print("[2] End-to-End Encrypted (E2EE) Conversation")
+    choice = input(" " * 55 + "Choose Option [1/2]: ").strip()
+    if choice == "1":
+        print("Starting Normal Chat Mode...")
+        send_normal_messages()
+    elif choice == "2":
+        print("Starting E2EE Chat Mode...")
+        send_e2ee_messages()
     else:
-        console.print("[bold red]Logo file missing![/bold red]")
+        print("Invalid choice!")
 
-def show_menu():
-    console.print("\n[bold cyan][1][/bold cyan] Normal Chat Conversation")
-    console.print("[bold cyan][2][/bold cyan] End-to-End Encrypted (E2EE) Conversation")
-    return console.input("\n[bold yellow]Choose Option [1/2]: [/bold yellow]").strip()
-
-def main():
-    os.system("clear" if os.name == "posix" else "cls")
-    show_logo()
-
-    if not check_and_print_username("cookies.txt"):
-        return
-
-    choice = show_menu()
-    if choice == '1':
-        start_normal_chat()
-    elif choice == '2':
-        start_e2ee_chat()
-    else:
-        console.print("[red]Invalid option. Exiting...[/red]")
+if __name__ == "__main__":
+    menu()
 
 if __name__ == "__main__":
     try:
